@@ -28,6 +28,16 @@ A request for `str` or `bytes` will fetch the raw file with no conversion.
 
 For [security reasons](../explanations/whitelist_info.md), only files existing on the [whitelist](https://github.com/DiamondLightSource/daq-config-server/blob/main/whitelist.yaml) can be read. Please make a PR to add a file to the whitelist. If unsure, please ask in the #daq-config-server slack channel or create a GitHub issue. To make the config-server as quick to use as possible, the server will check any requests against the `whitelist.yaml` file on **the main branch of the repository**, rather than the whitelist in the latest release. The server will check for updates every 5 minutes.
 
+# File-based whitelist
+
+As an alternative to a remote single centrally-maintained whitelist, it is possible to configure a local file-based whitelist, which can be
+specified in the AppConfig YAML, for example:
+
+```yaml
+
+
+```
+
 # Reading sensitive information
 
 If you need to read a file which contains sensitive information, or `dls-dasc` doesn't have the permissions to read your file, you should encrypt this file as a [sealed secret](https://github.com/bitnami-labs/sealed-secrets) on your beamline cluster, and mount this in your BlueAPI service.

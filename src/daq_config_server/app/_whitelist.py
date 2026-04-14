@@ -1,18 +1,22 @@
 import atexit
 import logging
 import time
-from functools import cache
+from abc import abstractmethod
 from pathlib import Path
 from threading import Event, Thread
 
 import requests
 import yaml
 
+from daq_config_server.app._config import WhitelistConfig
+
 LOGGER = logging.getLogger(__name__)
 
 
 WHITELIST_REFRESH_RATE_S = 300
 WHITELIST_URL = "https://raw.githubusercontent.com/DiamondLightSource/daq-config-server/refs/heads/main/whitelist.yaml"
+
+_whitelist: "WhitelistFetcher"
 
 
 class WhitelistFetcher:
@@ -28,10 +32,13 @@ class WhitelistFetcher:
         )
         self.update_in_background_thread.start()
 
+    @abstractmethod
+    def _fetch(self):
+        pass
+
     def _fetch_and_update(self):
-        response = requests.get(WHITELIST_URL)
-        response.raise_for_status()
-        data = yaml.safe_load(response.text)
+        text = self._fetch()
+        data = yaml.safe_load(text)
         self.whitelist_files = {Path(p) for p in data.get("whitelist_files")}
         self.whitelist_dirs = {Path(p) for p in data.get("whitelist_dirs")}
 
@@ -57,11 +64,39 @@ class WhitelistFetcher:
         self.update_in_background_thread.join(timeout=1)
 
 
-@cache
+class UrlWhitelist(WhitelistFetcher):
+    """Read the whitelist from the main branch of this repo from github"""
+
+    def _fetch(self) -> str:
+        response = requests.get(WHITELIST_URL)
+        response.raise_for_status()
+        text = response.text
+        return text
+
+
+class FilesystemWhitelist(WhitelistFetcher):
+    """Read the whitelist from a configuration file"""
+
+    def __init__(self, path: Path):
+        self._path = path
+        super().__init__()
+
+    def _fetch(self) -> str:
+        with self._path.open() as f:
+            return f.read()
+
+
 def get_whitelist() -> WhitelistFetcher:
-    fetcher = WhitelistFetcher()
-    atexit.register(fetcher.stop)
-    return fetcher
+    return _whitelist
+
+
+def init_whitelist(config: WhitelistConfig) -> None:
+    global _whitelist
+    if config.config_file:
+        _whitelist = FilesystemWhitelist(Path(config.config_file))
+    else:
+        _whitelist = UrlWhitelist()
+    atexit.register(_whitelist.stop)
 
 
 def path_is_whitelisted(file_path: Path) -> bool:

@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from ._config import load_config
 from ._log import set_up_logging
 from ._routes import router
+from ._whitelist import init_whitelist
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ def main():
     config = load_config()
 
     set_up_logging(config.logging)
+    init_whitelist(config.whitelist)
 
     uvicorn.run(
         "daq_config_server.app.api:app",

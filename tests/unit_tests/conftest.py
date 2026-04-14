@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from pytest import FixtureRequest
 
-from daq_config_server.app._whitelist import get_whitelist
+from daq_config_server.app._whitelist import UrlWhitelist, get_whitelist
 from daq_config_server.testing._utils import make_test_response
 from tests.constants import TEST_WHITELIST_RESPONSE
 
@@ -25,17 +25,18 @@ def test_friendly_whitelist(request: FixtureRequest):
                 content=TEST_WHITELIST_RESPONSE
             )
 
-        if request.node.get_closest_marker("use_threading"):  # type: ignore
-            with patch(
-                "daq_config_server.app._whitelist.WHITELIST_REFRESH_RATE_S", new=0
-            ):
-                yield
-                get_whitelist().stop()
-        else:
-            with (
-                patch("daq_config_server.app._whitelist.Thread"),
-                patch("daq_config_server.app._whitelist.WhitelistFetcher.stop"),
-            ):
-                yield
-
-    get_whitelist.cache_clear()
+        with patch(
+            "daq_config_server.app._whitelist._whitelist", UrlWhitelist(), create=True
+        ):
+            if request.node.get_closest_marker("use_threading"):  # type: ignore
+                with patch(
+                    "daq_config_server.app._whitelist.WHITELIST_REFRESH_RATE_S", new=0
+                ):
+                    yield
+                    get_whitelist().stop()
+            else:
+                with (
+                    patch("daq_config_server.app._whitelist.Thread"),
+                    patch("daq_config_server.app._whitelist.WhitelistFetcher.stop"),
+                ):
+                    yield

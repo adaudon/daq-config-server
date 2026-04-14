@@ -12,9 +12,14 @@ class UvicornConfig(BaseModel):
     workers: int = 2
 
 
+class WhitelistConfig(BaseModel):
+    config_file: str | None = None
+
+
 class AppConfig(BaseModel):
     logging: LoggingConfig = LoggingConfig()
     uvicorn: UvicornConfig = UvicornConfig()
+    whitelist: WhitelistConfig = WhitelistConfig()
 
 
 def load_config() -> AppConfig:

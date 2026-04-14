@@ -4,7 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from daq_config_server.app._whitelist import WhitelistFetcher, get_whitelist
+from daq_config_server.app._config import WhitelistConfig
+from daq_config_server.app._whitelist import (
+    WhitelistFetcher,
+    get_whitelist,
+    init_whitelist,
+)
 
 """The tests in this file will read directly from the whitelist.yaml in the current
 branch"""
@@ -25,7 +30,7 @@ def test_fetch_and_update_contructs_whitelist_given_yaml():
 
 @patch("daq_config_server.app._whitelist.LOGGER.info")
 def test_initial_load_on_sucessful_fetch(mock_log_info: MagicMock):
-    get_whitelist()
+    init_whitelist(WhitelistConfig())
     mock_log_info.assert_called_once_with("Successfully read whitelist from GitHub.")
 
 
@@ -38,7 +43,7 @@ def test_initial_load_on_failed_fetch(mock_log_error: MagicMock):
         with pytest.raises(
             RuntimeError, match="Failed to load whitelist during initialization."
         ):
-            get_whitelist()
+            init_whitelist(WhitelistConfig())
 
     mock_log_error.assert_called_once_with("Initial whitelist load failed: blah")
 
@@ -74,6 +79,17 @@ def test_periodically_update_whitelist_on_successful_update(mock_log: MagicMock)
             logging_event.set()
 
     mock_log.info.side_effect = complete_logging_event_on_current_message
-    get_whitelist()
+    init_whitelist(WhitelistConfig())
     assert logging_event.wait(timeout=0.1)
     mock_log.error.assert_not_called()
+
+
+def test_file_based_whitelist():
+    whitelist_path = "tests/test_data/whitelist.yaml"
+    config = WhitelistConfig(config_file=whitelist_path)
+    init_whitelist(config)
+    whitelist = get_whitelist()
+    assert whitelist.whitelist_files == {
+        Path("/tests/test_data/beamline_parameters.txt")
+    }
+    assert whitelist.whitelist_dirs == {Path("/tests/test_data/good_dir")}
