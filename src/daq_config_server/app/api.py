@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -9,7 +10,7 @@ from fastapi.responses import Response
 from ._config import load_config
 from ._log import set_up_logging
 from ._routes import router
-from ._whitelist import init_whitelist
+from ._whitelist import init_whitelist, get_whitelist
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,9 +25,18 @@ async def log_request_details(
     return await call_next(request)
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    config = load_config()
+    init_whitelist(config.whitelist)
+    yield
+    get_whitelist().stop()
+
+
 app = FastAPI(
     title="DAQ config server",
     description="For reading files stored on /dls_sw from another container",
+    lifespan=lifespan,
 )
 
 app.middleware("http")(log_request_details)
@@ -46,7 +56,6 @@ def main():
     config = load_config()
 
     set_up_logging(config.logging)
-    init_whitelist(config.whitelist)
 
     uvicorn.run(
         "daq_config_server.app.api:app",

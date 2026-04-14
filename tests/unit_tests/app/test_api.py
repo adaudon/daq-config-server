@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from daq_config_server.__main__ import __version__, main
 from daq_config_server.app import main as main_app
 from daq_config_server.app._config import WhitelistConfig
-from daq_config_server.app.api import app, log_request_details
+from daq_config_server.app.api import app, log_request_details, lifespan
 from tests.constants import TEST_CONFIG_PATH
 
 
@@ -74,9 +74,13 @@ def test_logging_with_no_mounted_config(
     mock_graylog_setup.assert_not_called()
 
 
+@patch("daq_config_server.app.api.get_whitelist")
 @patch("daq_config_server.app.api.uvicorn.run")
-def test_main_app_calls_init_whitelist(
-    mock_run: MagicMock, mock_init_whitelist: MagicMock
+async def test_app_lifespan_calls_init_whitelist(
+    mock_run: MagicMock,
+    mock_get_whitelist: MagicMock,
+    mock_init_whitelist: MagicMock
 ):
-    main_app()
-    mock_init_whitelist.assert_called_once_with(WhitelistConfig())
+    async with lifespan(MagicMock()):
+        mock_init_whitelist.assert_called_once_with(WhitelistConfig())
+    mock_get_whitelist.return_value.stop.assert_called_once()
