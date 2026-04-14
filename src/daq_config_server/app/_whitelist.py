@@ -33,7 +33,7 @@ class WhitelistFetcher:
         self.update_in_background_thread.start()
 
     @abstractmethod
-    def _fetch(self):
+    def _fetch(self) -> str:
         pass
 
     def _fetch_and_update(self):
