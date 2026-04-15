@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from ._config import load_config
 from ._log import set_up_logging
 from ._routes import router
-from ._whitelist import init_whitelist, get_whitelist
+from ._whitelist import get_whitelist, init_whitelist
 
 LOGGER = logging.getLogger(__name__)
 
