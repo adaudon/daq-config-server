@@ -34,7 +34,7 @@ class WhitelistFetcher:
 
     @abstractmethod
     def _fetch(self) -> str:
-        pass
+        pass  # pragma: no cover
 
     def _fetch_and_update(self):
         text = self._fetch()
