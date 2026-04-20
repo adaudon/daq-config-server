@@ -34,7 +34,10 @@ class WhitelistFetcher:
 
     @abstractmethod
     def _fetch(self) -> str:
-        pass  # pragma: no cover
+        """Implement in derived classes to fetch the whitelist.
+        Returns:
+            str: The whitelist YAML
+        """
 
     def _fetch_and_update(self):
         text = self._fetch()
