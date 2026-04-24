@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from _pytest.tmpdir import TempPathFactory
 from pytest import FixtureRequest
 
 from daq_config_server.app._config import WhitelistConfig
@@ -16,7 +17,7 @@ DEFAULT_WHITELIST = (
 
 
 @pytest.fixture(scope="session")
-def tmp_whitelist(tmp_path_factory):
+def tmp_whitelist(tmp_path_factory: TempPathFactory) -> Path:
     tmp_whitelist = tmp_path_factory.mktemp("yaml") / "test_whitelist.yaml"
     with tmp_whitelist.open("w") as whitelist_stream:
         whitelist_stream.write(TEST_WHITELIST_RESPONSE)

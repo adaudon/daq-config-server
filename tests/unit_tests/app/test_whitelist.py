@@ -1,4 +1,5 @@
 import threading
+from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -29,7 +30,9 @@ def mock_log_info():
 
 
 @pytest.fixture()
-def inject_whitelist(request: FixtureRequest, mock_log_info: MagicMock):
+def inject_whitelist(
+    request: FixtureRequest, mock_log_info: MagicMock
+) -> Generator[None, None, None]:
     with (
         patch("daq_config_server.app._whitelist.Thread"),
         patch("daq_config_server.app._whitelist.WhitelistFetcher.stop"),
@@ -39,7 +42,7 @@ def inject_whitelist(request: FixtureRequest, mock_log_info: MagicMock):
 
 
 @pytest.mark.parametrize("inject_whitelist", [LEGACY_SHARED_WHITELIST], indirect=True)
-def test_legacy_whitelist_contains_expected_data(inject_whitelist):
+def test_legacy_whitelist_contains_expected_data(inject_whitelist: None):
     whitelist = get_whitelist()
     expected_files = {
         Path("/tests/test_data/beamline_parameters.txt"),
@@ -53,7 +56,7 @@ def test_legacy_whitelist_contains_expected_data(inject_whitelist):
 
 
 @pytest.mark.parametrize("inject_whitelist", [DEFAULT_WHITELIST], indirect=True)
-def test_default_whitelist_contains_expected_data(inject_whitelist):
+def test_default_whitelist_contains_expected_data(inject_whitelist: None):
     whitelist = get_whitelist()
     expected_files = {
         Path("/tests/test_data/beamline_parameters.txt"),
@@ -68,7 +71,7 @@ def test_default_whitelist_contains_expected_data(inject_whitelist):
 @pytest.mark.parametrize("inject_whitelist", [DEFAULT_WHITELIST], indirect=True)
 def test_initial_load_on_successful_fetch(
     mock_log_info: MagicMock,
-    inject_whitelist,
+    inject_whitelist: None,
 ):
     mock_log_info.assert_called_once_with("Successfully read whitelist.")
 
