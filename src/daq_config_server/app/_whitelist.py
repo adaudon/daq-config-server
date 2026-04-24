@@ -5,7 +5,6 @@ from abc import abstractmethod
 from pathlib import Path
 from threading import Event, Thread
 
-import requests
 import yaml
 
 from daq_config_server.app._config import WhitelistConfig
@@ -14,13 +13,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 WHITELIST_REFRESH_RATE_S = 300
-WHITELIST_URL = "https://raw.githubusercontent.com/DiamondLightSource/daq-config-server/refs/heads/main/whitelist.yaml"
 
 _whitelist: "WhitelistFetcher"
 
 
 class WhitelistFetcher:
-    """Read the whitelist from the main branch of this repo from github, and check for
+    """Read the whitelist from the implementation-specific source, and check for
     updates every 5 minutes. This lets the deployed server see updates to the whitelist
     without requiring a new release or a restart"""
 
@@ -48,7 +46,7 @@ class WhitelistFetcher:
     def _initial_load(self):
         try:
             self._fetch_and_update()
-            LOGGER.info("Successfully read whitelist from GitHub.")
+            LOGGER.info("Successfully read whitelist.")
         except Exception as e:
             LOGGER.error(f"Initial whitelist load failed: {e}")
             raise RuntimeError("Failed to load whitelist during initialization.") from e
@@ -65,16 +63,6 @@ class WhitelistFetcher:
     def stop(self):
         self._stop.set()
         self.update_in_background_thread.join(timeout=1)
-
-
-class UrlWhitelist(WhitelistFetcher):
-    """Read the whitelist from the main branch of this repo from github"""
-
-    def _fetch(self) -> str:
-        response = requests.get(WHITELIST_URL)
-        response.raise_for_status()
-        text = response.text
-        return text
 
 
 class FilesystemWhitelist(WhitelistFetcher):
@@ -95,10 +83,7 @@ def get_whitelist() -> WhitelistFetcher:
 
 def init_whitelist(config: WhitelistConfig) -> None:
     global _whitelist
-    if config.config_file:
-        _whitelist = FilesystemWhitelist(Path(config.config_file))
-    else:
-        _whitelist = UrlWhitelist()
+    _whitelist = FilesystemWhitelist(Path(config.config_file))
     atexit.register(_whitelist.stop)
 
 

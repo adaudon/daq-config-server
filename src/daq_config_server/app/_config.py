@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from daq_config_server.app._log import LoggingConfig
 
 CONFIG_PATH = "/etc/config/config.yaml"
+DEFAULT_WHITELIST_PATH = "/etc/config/whitelist.yaml"
 
 
 class UvicornConfig(BaseModel):
@@ -13,7 +14,7 @@ class UvicornConfig(BaseModel):
 
 
 class WhitelistConfig(BaseModel):
-    config_file: str | None = None
+    config_file: str = DEFAULT_WHITELIST_PATH
 
 
 class AppConfig(BaseModel):
